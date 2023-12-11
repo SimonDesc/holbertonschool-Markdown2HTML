@@ -28,6 +28,7 @@ def replace_dieze(markdown_array):
         "3": "<h3>",
         "4": "<h4>",
         "5": "<h5>",
+        "6": "<h6>",
     }
     dict_dieze_end = {
         "1": "</h1>",
@@ -35,6 +36,7 @@ def replace_dieze(markdown_array):
         "3": "</h3>",
         "4": "</h4>",
         "5": "</h5>",
+        "6": "</h6>",
     }
     for string in markdown_array:
         count = 0
