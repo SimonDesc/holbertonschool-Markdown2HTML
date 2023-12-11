@@ -43,11 +43,13 @@ def replace_dieze(markdown_array):
                 count += 1
             else:
                 break
-        new_array.append(dict_dieze[str(count)])
-        old_string = string.replace("#", "")
-        new_array.append(old_string.lstrip())
-        new_array.append(dict_dieze_end[str(count)])
-        new_array.append("\n")
+        if count > 0:
+            print(dict_dieze[str(count)])
+            new_array.append(dict_dieze[str(count)])
+            old_string = string.replace("#", "")
+            new_array.append(old_string.lstrip())
+            new_array.append(dict_dieze_end[str(count)])
+            new_array.append("\n")
 
     return "".join(new_array)
 
