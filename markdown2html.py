@@ -44,7 +44,6 @@ def replace_dieze(markdown_array):
             else:
                 break
         if count > 0:
-            print(dict_dieze[str(count)])
             new_array.append(dict_dieze[str(count)])
             old_string = string.replace("#", "")
             new_array.append(old_string.lstrip())
