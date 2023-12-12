@@ -57,9 +57,23 @@ def open_file(markdown_file):
     :return: a string containing the HTML representation of the contents
     of the markdown file.
     """
+    
     html_str = ''
-    unordered_list_buffer = []
-    ordered_list_buffer = []
+    current_buffer = []
+    buffer_type = None
+
+    def flush_buffer():
+        # fait référence aux variables dans la fonction englobante
+        nonlocal current_buffer, buffer_type, html_str
+        if current_buffer:
+            if buffer_type == 'unordered':
+                html_str += handle_list(current_buffer)
+            elif buffer_type == 'ordered':
+                html_str += handle_ordered_list(current_buffer)
+            elif buffer_type == 'paragraph':
+                html_str += replace_line_p(current_buffer)
+            current_buffer = []
+            buffer_type = None
 
     with open(markdown_file) as f:
         for line in f:
@@ -67,65 +81,34 @@ def open_file(markdown_file):
             if not clean_line:
                 continue
 
+            # Détecter le type de contenu et créer/vider les buffers si nécessaire
             if clean_line.startswith('#'):
-                # Gestion des #
-                # Si le buffer contient une liste
-                if unordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_list(unordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    unordered_list_buffer = []
-
-                if ordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_ordered_list(ordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    ordered_list_buffer = []
-
+                flush_buffer()
                 html_str += replace_dieze(clean_line)
+                continue
 
-            elif clean_line.startswith('-'):
-                if ordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_ordered_list(ordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    ordered_list_buffer = []
-                # Gestion des listes unordered
-                unordered_list_buffer.append(clean_line)
+            if clean_line.startswith('-'):
+                if buffer_type != 'unordered':
+                    flush_buffer()
+                    buffer_type = 'unordered'
+                current_buffer.append(clean_line)
+                continue
 
-            elif clean_line.startswith('*'):
-                if unordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_list(unordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    unordered_list_buffer = []
+            if clean_line.startswith('*'):
+                if buffer_type != 'ordered':
+                    flush_buffer()
+                    buffer_type = 'ordered'
+                current_buffer.append(clean_line)
+                continue
 
-                # Gestion des listes ordered
-                ordered_list_buffer.append(clean_line)
+            if not clean_line.startswith(('#', '-', '*')):
+                if buffer_type != 'paragraph':
+                    flush_buffer()
+                    buffer_type = 'paragraph'
+                current_buffer.append(clean_line)
 
-            # Gestion des autres cas
-            else:
-                # Si le buffer contient une liste
-                if unordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_list(unordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    unordered_list_buffer = []
-                if ordered_list_buffer:
-                    # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_ordered_list(ordered_list_buffer)
-                    # on vide le buffer pour gérer d'autres listes
-                    ordered_list_buffer = []
-                # Cas de la ligne sans char speciaux
-                html_str += replace_line(clean_line)
+        flush_buffer()  # Pour traiter tout contenu restant
 
-        # A la fin du fichier, on regarde si on a encore une liste
-        # si oui, on la traite
-        if unordered_list_buffer:
-            html_str += handle_list(unordered_list_buffer)
-
-        if ordered_list_buffer:
-            html_str += handle_ordered_list(ordered_list_buffer)
     return html_str
 
 
@@ -167,7 +150,7 @@ def handle_list(list_buffer):
     html_list += "</ul>\n"
     return html_list
 
-
+    
 def replace_list(line):
     """
     The `replace_list` function takes a line of text and returns it
@@ -185,6 +168,17 @@ def replace_list(line):
     """
     content = line[1:].lstrip()
     return f"<li>{content}</li>\n"
+
+
+def replace_line_p(paragraph):
+    html_p = "<p>\n"
+
+    for i, item in enumerate(paragraph):
+        html_p += replace_line(item)
+        if i < len(paragraph) - 1:
+            html_p += '<br/>' + '\n'
+    html_p += "</p>\n"
+    return html_p
 
 
 def replace_line(line):
