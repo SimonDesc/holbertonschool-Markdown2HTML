@@ -58,7 +58,8 @@ def open_file(markdown_file):
     of the markdown file.
     """
     html_str = ''
-    list_buffer = []
+    unordered_list_buffer = []
+    ordered_list_buffer = []
 
     with open(markdown_file) as f:
         for line in f:
@@ -69,32 +70,82 @@ def open_file(markdown_file):
             if clean_line.startswith('#'):
                 # Gestion des #
                 # Si le buffer contient une liste
-                if list_buffer:
+                if unordered_list_buffer:
                     # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_list(list_buffer)
+                    html_str += handle_list(unordered_list_buffer)
                     # on vide le buffer pour gérer d'autres listes
-                    list_buffer = []
+                    unordered_list_buffer = []
+
+                if ordered_list_buffer:
+                    # alors on commence à la traiter pour ajouter les balises
+                    html_str += handle_ordered_list(ordered_list_buffer)
+                    # on vide le buffer pour gérer d'autres listes
+                    ordered_list_buffer = []
+
                 html_str += replace_dieze(clean_line)
+
             elif clean_line.startswith('-'):
-                # Gestion des listes
-                list_buffer.append(clean_line)
+                if ordered_list_buffer:
+                    # alors on commence à la traiter pour ajouter les balises
+                    html_str += handle_ordered_list(ordered_list_buffer)
+                    # on vide le buffer pour gérer d'autres listes
+                    ordered_list_buffer = []
+                # Gestion des listes unordered
+                unordered_list_buffer.append(clean_line)
+
+            elif clean_line.startswith('*'):
+                if unordered_list_buffer:
+                    # alors on commence à la traiter pour ajouter les balises
+                    html_str += handle_list(unordered_list_buffer)
+                    # on vide le buffer pour gérer d'autres listes
+                    unordered_list_buffer = []
+
+                # Gestion des listes ordered
+                ordered_list_buffer.append(clean_line)
+
             # Gestion des autres cas
             else:
                 # Si le buffer contient une liste
-                if list_buffer:
+                if unordered_list_buffer:
                     # alors on commence à la traiter pour ajouter les balises
-                    html_str += handle_list(list_buffer)
+                    html_str += handle_list(unordered_list_buffer)
                     # on vide le buffer pour gérer d'autres listes
-                    list_buffer = []
+                    unordered_list_buffer = []
+                if ordered_list_buffer:
+                    # alors on commence à la traiter pour ajouter les balises
+                    html_str += handle_ordered_list(ordered_list_buffer)
+                    # on vide le buffer pour gérer d'autres listes
+                    ordered_list_buffer = []
                 # Cas de la ligne sans char speciaux
                 html_str += replace_line(clean_line)
 
         # A la fin du fichier, on regarde si on a encore une liste
         # si oui, on la traite
-        if list_buffer:
-            html_str += handle_list(list_buffer)
+        if unordered_list_buffer:
+            html_str += handle_list(unordered_list_buffer)
 
+        if ordered_list_buffer:
+            html_str += handle_ordered_list(ordered_list_buffer)
     return html_str
+
+
+def handle_ordered_list(list_buffer):
+    """
+    The function "handle_ordered_list" takes a list of items and returns
+    an HTML ordered list.
+
+    :param list_buffer: The `list_buffer` parameter is a list that contains
+    the items of the ordered
+    list. Each item in the list represents a line of text that needs to be
+    converted into an HTML list
+    item
+    :return: an HTML ordered list (ol) as a string.
+    """
+    html_list = "<ol>\n"
+    for item in list_buffer:
+        html_list += replace_list(item)
+    html_list += "</ol>\n"
+    return html_list
 
 
 def handle_list(list_buffer):
