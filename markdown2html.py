@@ -68,6 +68,12 @@ def open_file(markdown_file):
 
             if clean_line.startswith('#'):
                 # Gestion des #
+                # Si le buffer contient une liste
+                if list_buffer:
+                    # alors on commence à la traiter pour ajouter les balises
+                    html_str += handle_list(list_buffer)
+                    # on vide le buffer pour gérer d'autres listes
+                    list_buffer = []
                 html_str += replace_dieze(clean_line)
             elif clean_line.startswith('-'):
                 # Gestion des listes
