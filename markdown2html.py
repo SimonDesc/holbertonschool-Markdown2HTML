@@ -71,7 +71,6 @@ def open_file(markdown_file):
             elif buffer_type == 'ordered':
                 html_str += handle_ordered_list(current_buffer)
             elif buffer_type == 'paragraph':
-
                 html_str += replace_line_p(current_buffer)
             current_buffer = []
             buffer_type = None
@@ -80,30 +79,31 @@ def open_file(markdown_file):
         for line in f:
 
             clean_line = line.strip()
-            # if not clean_line:
-            #     continue
 
             # Détecter le type de contenu et créer/vider les buffers
             if clean_line.startswith('#'):
+
                 flush_buffer()
                 html_str += replace_dieze(clean_line)
                 continue
 
             if clean_line.startswith('-'):
+
                 if buffer_type != 'unordered':
                     flush_buffer()
                     buffer_type = 'unordered'
                 current_buffer.append(clean_line)
                 continue
 
-            if clean_line.startswith('*'):
+            if clean_line.startswith('*') and not clean_line.startswith('**'):
                 if buffer_type != 'ordered':
                     flush_buffer()
                     buffer_type = 'ordered'
                 current_buffer.append(clean_line)
                 continue
 
-            if not clean_line.startswith(('#', '-', '*')):
+            if not clean_line.startswith(('#', '-', '*')) \
+                    or clean_line.startswith('**'):
                 if clean_line:
                     if buffer_type != 'paragraph':
                         flush_buffer()
@@ -131,7 +131,7 @@ def handle_ordered_list(list_buffer):
     """
     html_list = "<ol>\n"
     for item in list_buffer:
-        html_list += replace_list(item)
+        html_list += replace_list(special_char(item))
     html_list += "</ol>\n"
     return html_list
 
@@ -151,7 +151,8 @@ def handle_list(list_buffer):
     """
     html_list = "<ul>\n"
     for item in list_buffer:
-        html_list += replace_list(item)
+
+        html_list += replace_list(special_char(item))
     html_list += "</ul>\n"
     return html_list
 
@@ -175,10 +176,74 @@ def replace_list(line):
     return f"<li>{content}</li>\n"
 
 
+def special_char(str_item):
+    """
+    The function `special_char` takes a string as input and replaces
+    consecutive occurrences of "*" with
+    "<b>" and "</b>", and consecutive occurrences of "_" with "<em>"
+    and "</em>".
+
+    :param str_item: The parameter `str_item` is a string that represents
+    a text or sentence
+    :return: a modified version of the input string where consecutive
+    occurrences of "*" are replaced
+    with "<b>" and "</b>", and consecutive occurrences of "_" are replaced
+    with "<em>" and "</em>".
+    """
+    e_prev = ""
+    found_first_b = False
+    new_str = ""
+
+    for e in str_item:
+        e_current = e
+        if e_current == "*" and e_prev == "*":
+            if not found_first_b:
+                new_str += "<b>"
+                found_first_b = True
+                e_prev = None
+                continue
+            else:
+                new_str += "</b>"
+                found_first_b = False
+                e_prev = None
+                continue
+        if e_current == "_" and e_prev == "_":
+            if not found_first_b:
+                new_str += "<em>"
+                found_first_b = True
+                e_prev = None
+                continue
+            else:
+                new_str += "</em>"
+                found_first_b = False
+                e_prev = None
+                continue
+        if e_prev is not None:
+            new_str += e_prev
+        e_prev = e_current
+
+    if e_prev is not None and not found_first_b:
+        new_str += e_prev
+    return new_str
+
+
 def replace_line_p(paragraph):
+    """
+    The function `replace_line_p` takes a paragraph as input and returns an
+    HTML paragraph element with
+    each line of the paragraph separated by a line break.
+
+    :param paragraph: The `paragraph` parameter is a list of strings
+    representing the lines of a
+    paragraph
+    :return: a string containing an HTML paragraph element with each
+    line of the input paragraph as a
+    separate line within the paragraph.
+    """
     html_p = "<p>\n"
 
     for i, item in enumerate(paragraph):
+        item = special_char(item)
         html_p += replace_line(item)
         if i < len(paragraph) - 1:
             html_p += '<br/>' + '\n'
