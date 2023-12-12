@@ -57,7 +57,7 @@ def open_file(markdown_file):
     :return: a string containing the HTML representation of the contents
     of the markdown file.
     """
-    
+
     html_str = ''
     current_buffer = []
     buffer_type = None
@@ -71,17 +71,19 @@ def open_file(markdown_file):
             elif buffer_type == 'ordered':
                 html_str += handle_ordered_list(current_buffer)
             elif buffer_type == 'paragraph':
+
                 html_str += replace_line_p(current_buffer)
             current_buffer = []
             buffer_type = None
 
     with open(markdown_file) as f:
         for line in f:
-            clean_line = line.strip()
-            if not clean_line:
-                continue
 
-            # Détecter le type de contenu et créer/vider les buffers si nécessaire
+            clean_line = line.strip()
+            # if not clean_line:
+            #     continue
+
+            # Détecter le type de contenu et créer/vider les buffers
             if clean_line.startswith('#'):
                 flush_buffer()
                 html_str += replace_dieze(clean_line)
@@ -102,10 +104,13 @@ def open_file(markdown_file):
                 continue
 
             if not clean_line.startswith(('#', '-', '*')):
-                if buffer_type != 'paragraph':
+                if clean_line:
+                    if buffer_type != 'paragraph':
+                        flush_buffer()
+                        buffer_type = 'paragraph'
+                    current_buffer.append(clean_line)
+                else:
                     flush_buffer()
-                    buffer_type = 'paragraph'
-                current_buffer.append(clean_line)
 
         flush_buffer()  # Pour traiter tout contenu restant
 
@@ -150,7 +155,7 @@ def handle_list(list_buffer):
     html_list += "</ul>\n"
     return html_list
 
-    
+
 def replace_list(line):
     """
     The `replace_list` function takes a line of text and returns it
