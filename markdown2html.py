@@ -191,7 +191,9 @@ def special_char(str_item):
     with "<em>" and "</em>".
     """
     e_prev = ""
+    
     found_first_b = False
+    found_first_em = False
     new_str = ""
 
     for e in str_item:
@@ -208,21 +210,21 @@ def special_char(str_item):
                 e_prev = None
                 continue
         if e_current == "_" and e_prev == "_":
-            if not found_first_b:
+            if not found_first_em:
                 new_str += "<em>"
-                found_first_b = True
+                found_first_em = True
                 e_prev = None
                 continue
             else:
                 new_str += "</em>"
-                found_first_b = False
+                found_first_em = False
                 e_prev = None
                 continue
         if e_prev is not None:
             new_str += e_prev
         e_prev = e_current
 
-    if e_prev is not None and not found_first_b:
+    if e_prev is not None and not found_first_b and not found_first_em:
         new_str += e_prev
     return new_str
 
@@ -286,7 +288,7 @@ def replace_dieze(line):
         header_tag_end = f"</h{count}>"
         # Enlever les dièses et les espaces de début
         content = line[count:].lstrip()
-        return f"{header_tag}{content}{header_tag_end}\n"
+        return f"{header_tag}{special_char(content)}{header_tag_end}\n"
     else:
         return line + "\n"
 
