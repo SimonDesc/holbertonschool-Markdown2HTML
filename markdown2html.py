@@ -63,6 +63,7 @@ def open_file(markdown_file):
     html_str = ''
     current_buffer = []
     buffer_type = None
+    pattern_md5 = re.compile(r'\[\[(.*?)\]\]')
 
     def flush_buffer():
         # fait référence aux variables dans la fonction englobante
@@ -74,6 +75,10 @@ def open_file(markdown_file):
                 html_str += handle_ordered_list(current_buffer)
             elif buffer_type == 'paragraph':
                 html_str += replace_line_p(current_buffer)
+
+            # avec regex merci @v-dav
+            html_str = re.sub(pattern_md5, encode_md5, html_str)
+
             current_buffer = []
             buffer_type = None
 
@@ -283,12 +288,6 @@ def special_char(str_item):
     return new_str
 
 
-def encode_md5(match):
-    """A function that returns a MD5 encoded string"""
-    text_to_encode = match.group(1)
-    return hashlib.md5(text_to_encode.encode()).hexdigest()
-
-
 def replace_line_p(paragraph):
     """
     The function `replace_line_p` takes a paragraph as input and returns an
@@ -303,13 +302,8 @@ def replace_line_p(paragraph):
     separate line within the paragraph.
     """
     html_p = "<p>\n"
-    pattern_md5 = re.compile(r'\[\[(.*?)\]\]')
 
     for i, item in enumerate(paragraph):
-        # avec regex... c'est plus simple...
-        # merci @v-dav
-        item = re.sub(pattern_md5, encode_md5, item)
-
         # sans regex ->
         item = special_char(item)
         html_p += replace_line(item)
@@ -319,8 +313,15 @@ def replace_line_p(paragraph):
     return html_p
 
 
+def encode_md5(match):
+    """A function that returns a MD5 encoded string"""
+    text_to_encode = match.group(1)
+    return hashlib.md5(text_to_encode.encode()).hexdigest()
+
+
 def replace_line(line):
     # Logique pour traiter les autres types de lignes
+
     return line + "\n"
 
 
