@@ -201,6 +201,7 @@ def extra_special_char(str_item):
             start_parenthese = True
         if e_prev == ")" and e_current == ")":
             if start_parenthese:
+
                 parenthese_index.append(i)
                 extra_str = remove_specific_char(
                     str_item, 'c', parenthese_index[0], parenthese_index[1])
@@ -217,7 +218,7 @@ def extra_special_char(str_item):
 
 def remove_specific_char(chaine, char, start_index, end_index):
     # Extraire la partie à modifier
-    to_modify = chaine[start_index-1:end_index+1]
+    to_modify = chaine[start_index+1:end_index-1]
 
     # Retirer le caractère spécifié
     modified = to_modify.replace(char, "")
