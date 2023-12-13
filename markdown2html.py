@@ -3,6 +3,8 @@
 Ce script est un outil de ligne de commande pour convertir un
 fichier Markdown en fichier HTML.
 """
+import re
+import hashlib
 import sys
 import os
 
@@ -176,6 +178,54 @@ def replace_list(line):
     return f"<li>{content}</li>\n"
 
 
+def extra_special_char(str_item):
+    """
+    The `extra_special_char` function removes a specific character ('c')
+    from a string if it appears
+    between two sets of parentheses.
+
+    :param str_item: The input string that you want to modify
+    :return: a modified version of the input string `str_item`.
+    """
+    e_prev = ""
+    start_parenthese = False
+    parenthese_index = []
+    new_str = ""
+    last_index = 0
+
+    for i, e in enumerate(str_item):
+        extra_str = ""
+        e_current = e
+        if e_prev == "(" and e_current == "(":
+            parenthese_index.append(i)
+            start_parenthese = True
+        if e_prev == ")" and e_current == ")":
+            if start_parenthese:
+                parenthese_index.append(i)
+                extra_str = remove_specific_char(
+                    str_item, 'c', parenthese_index[0], parenthese_index[1])
+                new_str += str_item[last_index:parenthese_index[0]-1] \
+                    + extra_str
+                last_index = parenthese_index[1] + 1
+                parenthese_index = []
+        if not extra_str:
+            e_prev = e_current
+
+    new_str += str_item[last_index:]
+    return new_str
+
+
+def remove_specific_char(chaine, char, start_index, end_index):
+    # Extraire la partie à modifier
+    to_modify = chaine[start_index-1:end_index+1]
+
+    # Retirer le caractère spécifié
+    modified = to_modify.replace(char, "")
+    modified = modified.replace("C", "")
+
+    return modified
+
+
 def special_char(str_item):
     """
     The function `special_char` takes a string as input and replaces
@@ -191,7 +241,7 @@ def special_char(str_item):
     with "<em>" and "</em>".
     """
     e_prev = ""
-    
+
     found_first_b = False
     found_first_em = False
     new_str = ""
@@ -226,7 +276,16 @@ def special_char(str_item):
 
     if e_prev is not None and not found_first_b and not found_first_em:
         new_str += e_prev
+
+    new_str = extra_special_char(new_str)
+
     return new_str
+
+
+def encode_md5(match):
+    """A function that returns a MD5 encoded string"""
+    text_to_encode = match.group(1)
+    return hashlib.md5(text_to_encode.encode()).hexdigest()
 
 
 def replace_line_p(paragraph):
@@ -243,8 +302,14 @@ def replace_line_p(paragraph):
     separate line within the paragraph.
     """
     html_p = "<p>\n"
+    pattern_md5 = re.compile(r'\[\[(.*?)\]\]')
 
     for i, item in enumerate(paragraph):
+        # avec regex... c'est plus simple...
+        # merci @v-dav
+        item = re.sub(pattern_md5, encode_md5, item)
+
+        # sans regex ->
         item = special_char(item)
         html_p += replace_line(item)
         if i < len(paragraph) - 1:
